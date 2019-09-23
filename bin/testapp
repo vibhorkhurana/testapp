@@ -1,0 +1,13 @@
+#!/usr/bin/env python3
+
+# insert correct path when running as bin/tnest-dcu
+import sys
+import os
+from os.path import abspath, dirname
+
+sys.path.append(dirname(dirname(abspath(__file__))))
+
+from testapp.server import app
+
+if __name__ == '__main__':
+    app.run(debug=True)
