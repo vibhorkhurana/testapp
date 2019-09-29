@@ -3,23 +3,27 @@ import random
 from datetime import datetime
 import os
 
-
-def run_task(args, timeout=5, runtime=None):
+fllist=[]
+def run_task(args, timeout=5, runtime=None,async=False):
     """
     Perform a potentialy slow operation. Returns data
     or throws a TimeoutError if operation takes longer than `timeout`
     """
-
+    success=True
     started = datetime.utcnow()
 
     if runtime is None:
         runtime = random.uniform(0, timeout * 2)
 
     if runtime > timeout:
-        time.sleep(timeout)
-        raise TimeoutError("work was not completed in time")
+        if async:
+            time.sleep(timeout)
+        success=False
+        # raise TimeoutError("work was not completed in time")
     else:
-        time.sleep(runtime)
+        success=True
+        if async:
+            time.sleep(runtime)
 
     finished = datetime.utcnow()
     duration = (finished - started).total_seconds()
@@ -30,10 +34,14 @@ def run_task(args, timeout=5, runtime=None):
         "duration": %d,
         "results": %d,
         "args": "%s",
+        "success":%s
     }
-    """ % (started.timestamp(), duration, runtime, args)
+    """ % (started.timestamp(), duration, runtime, args,success)
 
-    return (finished, results)
+    if(success==False):
+        raise TimeoutError(finished,results)
+    else:
+        return (finished, results)
 
 
 
@@ -60,6 +68,7 @@ def save(basedir, task):
 
 
 def find(path, depth=-1):
+    fllist=[]
     """
     Recursively find all directories and files under `path`.
 
@@ -82,8 +91,12 @@ def find(path, depth=-1):
         "empty-directory"
     ])
     """
-    return (path, [
-        "file",
-        ("sub-directory", ["deep-file"]),
-        "empty-directory"
-    ])
+    for x in filter( lambda f: not f.startswith('.'), os.listdir(path)):
+        if(os.path.isdir(os.path.join(path,x))==True):
+            for root,dir,files in os.walk(os.path.join(path,x)): 
+                fllist.append((os.path.basename(root),files))
+        else:
+            fllist.append(x)
+
+    return(path,fllist)
+    # return ('', fllist)
